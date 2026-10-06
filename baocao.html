@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Báo cáo kinh doanh</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef0ee; --surface: #fbfcfb; --sunken: #f1f4f2; --line: #dfe3df; --line-strong: #c9cfca;
+    --text: #1b1f1c; --muted: #59605b; --accent: #2f5d4e; --accent-2: #4f8a76; --accent-3: #9cc3b3; --accent-soft: #e4ede9;
+    --gold: #b7791f; --gold-soft: #fdf3e1; --gold-ink: #8a5a12; --danger: #b42318; --danger-soft: #fdecea; --good: #1a7f4b;
+    --r: 14px;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 'Be Vietnam Pro', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  h1, h2 { margin: 0; }
+  h2 { font-size: 15px; font-weight: 600; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 24px 28px 40px; display: flex; flex-direction: column; gap: 16px; }
+  .g12 { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+  .s3 { grid-column: span 3; } .s4 { grid-column: span 4; } .s5 { grid-column: span 5; } .s7 { grid-column: span 7; } .s8 { grid-column: span 8; } .s12 { grid-column: span 12; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; min-width: 0; }
+  .card > h2 { margin-bottom: 14px; }
+  .sub { color: var(--muted); font-size: 12.5px; }
+  .empty { color: var(--muted); padding: 24px 0; text-align: center; font-size: 13px; }
+
+  /* Header */
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 500; font-size: 13px; margin-bottom: 4px; }
+  .logo { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: #f8faf9; display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+  .tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .seg { display: inline-flex; background: #e3e7e4; border-radius: 11px; padding: 3px; gap: 2px; }
+  .seg button { height: 36px; padding: 0 13px; border-radius: 9px; border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
+  .seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(27,31,28,.12); }
+  .btn { height: 42px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font: inherit; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #f8faf9; }
+  .btn:disabled { opacity: .6; cursor: wait; }
+  .custom { display: flex; gap: 6px; align-items: center; }
+  .custom input { height: 42px; border: 1px solid var(--line-strong); border-radius: 10px; padding: 0 10px; font: inherit; background: #fff; }
+  .meta-line { color: var(--muted); font-size: 12.5px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .spin { animation: sp 1s linear infinite; } @keyframes sp { to { transform: rotate(360deg); } }
+
+  /* KPI */
+  .hero { display: flex; flex-direction: column; gap: 6px; }
+  .hero .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .hero .label { font-weight: 600; color: var(--muted); }
+  .hero .big { font-size: 40px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .hero .facts { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+  .hero .facts b { color: var(--text); }
+  .hero svg { width: 100%; height: 96px; margin-top: 6px; display: block; }
+  .hero .axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 11.5px; }
+  .delta { font-size: 12.5px; font-weight: 600; }
+  .up { color: var(--good); } .down { color: var(--danger); } .flat { color: var(--muted); }
+  .kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .kpi { display: flex; justify-content: space-between; gap: 12px; align-items: flex-end; }
+  .kpi .l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .kpi .l span:first-child { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .kpi .v { font-size: 28px; font-weight: 700; letter-spacing: -.01em; }
+  .bars { display: flex; align-items: flex-end; gap: 3px; height: 44px; width: 104px; flex: none; }
+  .bars span { flex: 1; border-radius: 2px; min-height: 3px; }
+
+  /* Alerts */
+  .alerts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .alert { display: flex; gap: 12px; align-items: center; padding: 14px 16px; }
+  .alert .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+  .alert .t { display: flex; flex-direction: column; min-width: 0; }
+  .alert .t b { font-size: 15px; }
+  .alert .t span { color: var(--muted); font-size: 12.5px; }
+
+  /* Month chart */
+  .legend { display: flex; gap: 14px; color: var(--muted); font-size: 12.5px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .mchart { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; height: 240px; }
+  .yax { display: flex; flex-direction: column; justify-content: space-between; color: var(--muted); font-size: 11.5px; text-align: right; padding-bottom: 22px; }
+  .plot { position: relative; }
+  .gridl { position: absolute; inset: 0 0 22px 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+  .gridl span { border-top: 1px dashed var(--line); }
+  .cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; }
+  .col { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; }
+  .col .bw { height: calc(100% - 22px); width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+  .col .b { width: 70%; max-width: 44px; border-radius: 6px 6px 2px 2px; min-height: 2px; }
+  .col small { color: var(--muted); font-size: 11px; height: 16px; }
+  .plot svg { position: absolute; left: 0; right: 0; top: 0; height: calc(100% - 22px); width: 100%; overflow: visible; pointer-events: none; }
+
+  /* Lists */
+  .stack { display: flex; height: 14px; border-radius: 999px; overflow: hidden; gap: 2px; margin-bottom: 14px; }
+  .lrow { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid #edf0ed; }
+  .lrow:first-of-type { border-top: 0; }
+  .dot { width: 12px; height: 12px; border-radius: 4px; }
+  .lrow .n { display: flex; flex-direction: column; min-width: 0; }
+  .lrow .n span:first-child { font-weight: 600; }
+  .lrow .r { text-align: right; display: flex; flex-direction: column; }
+  .cat { display: flex; flex-direction: column; gap: 6px; padding: 9px 0; border-top: 1px solid #edf0ed; }
+  .cat:first-of-type { border-top: 0; }
+  .cat .top { display: flex; justify-content: space-between; gap: 8px; }
+  .cat .top span:first-child { font-weight: 600; }
+  .track { height: 8px; background: var(--sunken); border-radius: 999px; overflow: hidden; }
+  .track div { height: 100%; background: var(--accent); border-radius: 999px; }
+
+  /* Heat */
+  .heat { display: grid; grid-template-columns: 66px repeat(6, minmax(0, 1fr)); gap: 4px; }
+  .heat .h { color: var(--muted); font-size: 11.5px; text-align: center; padding-bottom: 2px; }
+  .heat .d { color: var(--muted); font-size: 12.5px; display: flex; align-items: center; }
+  .heat .c { height: 34px; border-radius: 6px; display: grid; place-items: center; font-weight: 600; font-size: 12.5px; }
+
+  .reg { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; }
+  .reg .rk { color: var(--muted); font-weight: 600; }
+  .reg .n { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+  /* Segments */
+  .seghead { display: flex; justify-content: space-between; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; }
+  .segbar { display: flex; height: 34px; border-radius: 10px; overflow: hidden; gap: 2px; margin-bottom: 16px; }
+  .segbar span { display: grid; place-items: center; font-size: 12px; font-weight: 600; min-width: 0; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 11px 10px; border-bottom: 1px solid #edf0ed; vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.r, th.r { text-align: right; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+  .pill i { width: 10px; height: 10px; border-radius: 3px; }
+  .tscroll { overflow-x: auto; }
+
+  .cus { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid #edf0ed; }
+  .cus:first-of-type { border-top: 0; }
+  .ini { width: 38px; height: 38px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+  .cus .n { display: flex; flex-direction: column; min-width: 0; }
+  .cus .n span:first-child { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cus .r { text-align: right; display: flex; flex-direction: column; }
+  .foot { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+
+  /* Pin + loading */
+  .gate { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+  .gate form { width: min(360px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 26px; display: grid; gap: 12px; text-align: center; }
+  .gate input { height: 48px; border: 1px solid var(--line-strong); border-radius: 10px; text-align: center; font: inherit; font-size: 20px; letter-spacing: .3em; }
+  .gate .msg { color: var(--danger); min-height: 1.2em; font-weight: 500; margin: 0; }
+  .gate .btn { justify-content: center; height: 46px; }
+  .sk { background: linear-gradient(90deg, #e6e9e6, #f2f4f2, #e6e9e6); background-size: 200% 100%; animation: sh 1.3s linear infinite; border-radius: var(--r); }
+  @keyframes sh { to { background-position: -200% 0; } }
+  #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--danger); color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 500; z-index: 9; max-width: 90vw; }
+  .dim { opacity: .55; transition: opacity .2s; }
+
+  @media (max-width: 1100px) { .s3, .s4, .s5 { grid-column: span 6; } .s7, .s8 { grid-column: span 12; } }
+  @media (max-width: 720px) {
+    .wrap { padding: 16px 12px 32px; gap: 12px; }
+    .g12 { gap: 12px; } .g12 > * { grid-column: 1 / -1; }
+    .card { padding: 16px; }
+    h1 { font-size: 22px; }
+    .tools { width: 100%; }
+    .seg { width: 100%; overflow-x: auto; }
+    .seg button { flex: 1 1 0; height: 40px; padding: 0 4px; font-size: 12.5px; white-space: nowrap; }
+    .hero .big { font-size: 32px; }
+    .kpis { gap: 12px; }
+    .kpi { flex-direction: column; align-items: flex-start; }
+    .kpi .v { font-size: 24px; }
+    .bars { width: 100%; height: 32px; }
+    .mchart { height: 200px; grid-template-columns: 34px minmax(0, 1fr); }
+    .cols { gap: 3px; }
+    .col small { font-size: 9.5px; }
+    .custom input { font-size: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="toast" hidden></div>
+
+<div id="gate" class="gate" hidden>
+  <form id="pinForm" autocomplete="off">
+    <div class="logo" style="justify-self:center">₫</div>
+    <h1 style="font-size:20px">Báo cáo kinh doanh</h1>
+    <p class="sub" id="gateText" style="margin:0">Nhập mã PIN chủ shop để xem.</p>
+    <input id="pin" type="password" inputmode="numeric" maxlength="12" aria-label="Mã PIN">
+    <p class="msg" id="pinMsg" role="alert"></p>
+    <button class="btn primary" id="pinBtn" type="submit">Xem báo cáo</button>
+  </form>
+</div>
+
+<div id="app" class="wrap" hidden>
+  <header>
+    <div>
+      <div class="brand"><span class="logo" id="logo">LX</span><span id="shop"></span></div>
+      <h1>Báo cáo kinh doanh</h1>
+    </div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Khoảng thời gian" id="ranges"></div>
+      <div class="custom" id="custom" hidden>
+        <input type="date" id="dFrom" aria-label="Từ ngày"><span class="sub">đến</span><input type="date" id="dTo" aria-label="Đến ngày">
+        <button class="btn primary" id="btnGo" type="button">Xem</button>
+      </div>
+      <button class="btn" id="btnRefresh" type="button" title="Lấy số mới nhất từ Sheet">
+        <svg id="icRefresh" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+        Làm mới
+      </button>
+    </div>
+  </header>
+  <div class="meta-line"><span id="rangeText" class="num"></span><span id="updated" class="num"></span></div>
+  <main id="main" style="display:flex;flex-direction:column;gap:16px"></main>
+</div>
+
+<script src="config.js"></script>
+<script src="bridge.js"></script>
+<script>
+const INIT = { needPin: true, noPin: false };
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const vnd = n => Math.round(Number(n) || 0).toLocaleString('vi-VN') + 'đ';
+const short = n => { n = Number(n) || 0; const a = Math.abs(n);
+  if (a >= 1e9) return (n / 1e9).toFixed(1).replace('.', ',').replace(',0', '') + ' tỷ';
+  if (a >= 1e6) return (n / 1e6).toFixed(1).replace('.', ',').replace(',0', '') + 'tr';
+  if (a >= 1e3) return Math.round(n / 1e3) + 'k'; return String(Math.round(n)); };
+const pct = (x, d = 0) => ((Number(x) || 0) * 100).toFixed(d).replace('.', ',') + '%';
+const C = { accent: '#2f5d4e', a2: '#4f8a76', a3: '#9cc3b3', gold: '#b7791f', grey: '#cfd6d1', ink: '#23473b' };
+const PAL = [C.accent, C.a2, C.a3, C.gold, '#d8c39a', C.grey];
+const SEGC = { 'VIP': ['#23473b', '#f8faf9'], 'Trung thành': ['#4f8a76', '#f8faf9'], 'Khách mới': ['#9cc3b3', '#1b1f1c'], 'Có nguy cơ rời bỏ': ['#b7791f', '#1b1f1c'], 'Mua 1 lần, đã lâu': ['#cfd6d1', '#1b1f1c'] };
+
+let PIN = '', D = null, RANGE = 2, BUSY = false;
+try { PIN = localStorage.getItem('dash_pin') || ''; } catch (e) {}
+
+/* ---------- Khoảng ngày ---------- */
+const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const RANGES = [
+  ['Hôm nay', () => { const t = new Date(); return [t, t]; }],
+  ['7 ngày', () => { const t = new Date(), f = new Date(t); f.setDate(t.getDate() - 6); return [f, t]; }],
+  ['Tháng này', () => { const t = new Date(); return [new Date(t.getFullYear(), t.getMonth(), 1), t]; }],
+  ['Tháng trước', () => { const t = new Date(); return [new Date(t.getFullYear(), t.getMonth() - 1, 1), new Date(t.getFullYear(), t.getMonth(), 0)]; }],
+  ['Tùy chọn', null]
+];
+function renderRanges() {
+  $('ranges').innerHTML = RANGES.map((r, i) => `<button type="button" class="${i === RANGE ? 'on' : ''}" data-i="${i}" aria-pressed="${i === RANGE}">${r[0]}</button>`).join('');
+  $('custom').hidden = RANGE !== 4;
+}
+$('ranges').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  RANGE = +b.dataset.i; renderRanges();
+  if (RANGE === 4) { if (D) { $('dFrom').value = D.range.fromIso; $('dTo').value = D.range.toIso; } return; }
+  const [f, t] = RANGES[RANGE][1](); load(iso(f), iso(t));
+});
+$('btnGo').onclick = () => { if ($('dFrom').value && $('dTo').value) load($('dFrom').value, $('dTo').value); };
+$('btnRefresh').onclick = () => { if (D) load(D.range.fromIso, D.range.toIso); };
+
+/* ---------- Tải dữ liệu ---------- */
+function load(from, to, silent) {
+  if (BUSY) return; BUSY = true;
+  $('btnRefresh').disabled = true; $('icRefresh').classList.add('spin');
+  if (!silent) $('main').classList.add('dim');
+  google.script.run
+    .withSuccessHandler(d => { BUSY = false; done(); show(d); })
+    .withFailureHandler(err => {
+      BUSY = false; done();
+      const m = err && err.message || String(err);
+      if (/PIN|ma_pin_chu/.test(m)) { try { localStorage.removeItem('dash_pin'); } catch (e) {} PIN = ''; return askPin(m, /^Chưa đặt/.test(m)); }
+      toast(m);
+    }).getDashboard(from, to, PIN);
+}
+function done() { $('btnRefresh').disabled = false; $('icRefresh').classList.remove('spin'); $('main').classList.remove('dim'); }
+function toast(m) { $('toast').textContent = m; $('toast').hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').hidden = true, 4000); }
+
+function askPin(msg, noPin) {
+  $('app').hidden = true; $('gate').hidden = false;
+  $('pinMsg').textContent = msg && !/^Chưa đặt/.test(msg) ? msg : '';
+  if (noPin) { $('gateText').textContent = 'Bạn đang đăng nhập bằng tài khoản không có quyền sửa Sheet. Chủ shop cần điền ma_pin_chu ở tab CauHinh, hoặc mở bằng tài khoản chủ Sheet.'; }
+  $('pin').focus();
+}
+$('pinForm').onsubmit = e => {
+  e.preventDefault();
+  PIN = $('pin').value.trim(); if (!PIN) return;
+  $('pinBtn').disabled = true; $('pinBtn').textContent = 'Đang kiểm tra...';
+  const [f, t] = RANGES[2][1]();
+  google.script.run.withSuccessHandler(d => {
+    try { localStorage.setItem('dash_pin', PIN); } catch (e) {}
+    $('pinBtn').disabled = false; $('pinBtn').textContent = 'Xem báo cáo';
+    $('gate').hidden = true; show(d);
+  }).withFailureHandler(err => {
+    $('pinBtn').disabled = false; $('pinBtn').textContent = 'Xem báo cáo';
+    $('pinMsg').textContent = err && err.message || 'Lỗi'; $('pin').select();
+  }).getDashboard(iso(f), iso(t), PIN);
+};
+
+/* ---------- Vẽ ---------- */
+function delta(cur, prev, kind) {
+  if (kind === 'pt') {
+    const d = (cur - prev) * 100;
+    if (!prev && !cur) return ['flat', 'Chưa có dữ liệu'];
+    return [d > 0.05 ? 'up' : d < -0.05 ? 'down' : 'flat', (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + Math.abs(d).toFixed(1).replace('.', ',') + ' điểm so với kỳ trước'];
+  }
+  if (kind === 'n') {
+    const d = cur - prev;
+    return [d > 0 ? 'up' : d < 0 ? 'down' : 'flat', (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '= ') + Math.abs(d) + ' so với kỳ trước'];
+  }
+  if (!prev) return ['flat', cur ? 'Kỳ trước chưa có dữ liệu' : 'Chưa có dữ liệu'];
+  const d = (cur - prev) / prev;
+  return [d > 0.0005 ? 'up' : d < -0.0005 ? 'down' : 'flat', (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + Math.abs(d * 100).toFixed(1).replace('.', ',') + '% so với kỳ trước'];
+}
+function bars(arr, color) {
+  const m = Math.max(...arr, 0) || 1;
+  return `<div class="bars" aria-hidden="true">${arr.map((v, i) => `<span style="height:${Math.max(6, v / m * 100).toFixed(0)}%;background:${i === arr.length - 1 ? color : color + '59'}" title="${esc(D.months[i].label)}"></span>`).join('')}</div>`;
+}
+function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+const ICON = {
+  money: 'M3 7h18v10H3zM7 12h.01M17 12h.01M12 9.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5',
+  user: 'M16 19a4 4 0 0 0-8 0M12 12a3 3 0 1 0 0-6a3 3 0 1 0 0 6M19 8v4M21 10h-4',
+  x: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M9 9l6 6M15 9l-6 6',
+  box: 'M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8',
+  ok: 'M20 6L9 17l-5-5'
+};
+const icon = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${p}"/></svg>`;
+
+function show(d) {
+  D = d; window._last = Date.now();
+  $('gate').hidden = true; $('app').hidden = false;
+  $('shop').textContent = d.shop || 'Cửa hàng';
+  $('logo').textContent = (d.shop || 'LX').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  $('rangeText').textContent = 'Kỳ: ' + d.range.from + ' - ' + d.range.to;
+  $('updated').textContent = 'Cập nhật lúc ' + d.updated;
+  const c = d.cur, p = d.prev, M = d.months;
+
+  /* Hero */
+  const rv = M.map(m => m.rev), mx = Math.max(...rv, 0) || 1, mn = Math.min(...rv);
+  const W = 520, H = 96, dx = W / (M.length - 1);
+  const pts = rv.map((r, i) => [i * dx, H - 6 - (mx === mn ? 0.5 : (r - mn) / (mx - mn)) * (H - 14)]);
+  const line = 'M' + pts.map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L');
+  const dr = delta(c.rev, p.rev);
+  const hero = `<div class="card s5 hero">
+    <div class="row"><span class="label">Doanh thu</span><span class="delta ${dr[0]} num">${dr[1]}</span></div>
+    <div class="big num">${vnd(c.rev)}</div>
+    <div class="facts num"><span><b>${c.orders}</b> đơn</span><span>TB <b>${vnd(c.aov)}</b> / đơn</span><span>Kỳ trước <b>${vnd(p.rev)}</b></span></div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="Doanh thu 12 tháng"><path d="${line} L${W} ${H} L0 ${H} Z" fill="${C.accent}22"/><path d="${line}" fill="none" stroke="${C.accent}" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg>
+    <div class="axis num"><span>${esc(M[0].label)}</span><span>Doanh thu 12 tháng</span><span>${esc(M[M.length - 1].label)}</span></div>
+  </div>`;
+  const K = [
+    ['Số đơn', c.orders, delta(c.orders, p.orders), M.map(m => m.orders), C.accent],
+    ['Khách mua', c.customers, delta(c.customers, p.customers, 'n'), M.map(m => m.cust), C.accent],
+    ['Khách mới', c.newCus, delta(c.newCus, p.newCus, 'n'), M.map(m => m.newCus), C.gold],
+    ['Tỉ lệ khách quay lại', pct(c.returnRate, 1), delta(c.returnRate, p.returnRate, 'pt'), M.map(m => m.ret), C.accent]
+  ];
+  const kpis = `<div class="s7 kpis">${K.map(k => `<div class="card kpi">
+      <div class="l"><span>${k[0]}</span><span class="v num">${k[1]}</span><span class="delta ${k[2][0]} num">${k[2][1]}</span></div>
+      ${bars(k[3], k[4])}</div>`).join('')}</div>`;
+
+  /* Alerts */
+  const risk = (d.segments.find(s => s.name === 'Có nguy cơ rời bỏ') || {}).count || 0;
+  const A = [];
+  if (c.receivable > 0) A.push([ICON.money, '#fdf3e1', '#8a5a12', vnd(c.receivable) + ' chưa thu', c.receivableCount + ' đơn chưa giao còn tiền phải thu']);
+  if (risk) A.push([ICON.user, '#e4ede9', C.accent, risk + ' khách có nguy cơ rời bỏ', 'Từng mua 2 đơn trở lên, hơn 90 ngày chưa quay lại']);
+  if (c.cancel) A.push([ICON.x, '#fdecea', '#b42318', 'Tỉ lệ hủy ' + pct(c.cancelRate, 1), c.cancel + ' đơn hủy trong kỳ, kỳ trước ' + pct(p.cancelRate, 1)]);
+  if (d.lowStock.length) A.push([ICON.box, '#fdf3e1', '#8a5a12', d.lowStock.length + ' sản phẩm sắp hết',
+    d.lowStock.slice(0, 3).map(x => x.name + ' (' + x.stock + ')').join(', ') + (d.lowStock.length > 3 ? '…' : '')]);
+  if (!A.length) A.push([ICON.ok, '#e4ede9', C.accent, 'Không có gì cần xử lý', 'Không có công nợ, khách sắp rời hay đơn hủy']);
+  const alerts = `<section class="alerts" aria-label="Cần chú ý">${A.map(a => `<div class="card alert">
+      <span class="ic" style="background:${a[1]};color:${a[2]}">${icon(a[0])}</span>
+      <div class="t"><b class="num">${esc(a[3])}</b><span>${esc(a[4])}</span></div></div>`).join('')}</section>`;
+
+  /* 12 tháng */
+  const top = niceMax(Math.max(...rv, 0)), omax = Math.max(...M.map(m => m.orders), 1) * 1.15;
+  const step = 100 / 12;
+  const oline = M.map((m, i) => (step * i + step / 2).toFixed(2) + ',' + (100 - m.orders / omax * 100).toFixed(2)).join(' ');
+  const month = `<div class="card s8">
+    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px"><h2>Doanh thu và số đơn 12 tháng</h2>
+      <div class="legend"><span><i style="background:${C.accent}"></i>Doanh thu</span><span><i style="background:${C.gold};height:3px;border-radius:2px;vertical-align:3px"></i>Số đơn</span></div></div>
+    <div class="mchart">
+      <div class="yax num"><span>${short(top)}</span><span>${short(top * .75)}</span><span>${short(top / 2)}</span><span>${short(top / 4)}</span><span>0</span></div>
+      <div class="plot">
+        <div class="gridl" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="cols">${M.map((m, i) => `<div class="col"><div class="bw"><div class="b" style="height:${(m.rev / top * 100).toFixed(1)}%;background:${i === 11 ? C.accent : C.accent + 'b3'}" title="${esc(m.label)}: ${vnd(m.rev)}, ${m.orders} đơn"></div></div><small class="num">${esc(i === 0 || m.label.startsWith('01/') ? m.label.replace('/20', '/') : m.label.slice(0, 2))}</small></div>`).join('')}</div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${oline}" fill="none" stroke="${C.gold}" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>
+      </div>
+    </div></div>`;
+
+  /* Kênh */
+  const ch = d.channels;
+  const chan = `<div class="card s4"><h2>Doanh thu theo kênh</h2>${!ch.length ? '<div class="empty">Chưa có đơn trong kỳ</div>' : `
+    <div class="stack" aria-hidden="true">${ch.map((x, i) => `<span style="width:${(x.share * 100).toFixed(1)}%;background:${PAL[i % PAL.length]}"></span>`).join('')}</div>
+    ${ch.map((x, i) => `<div class="lrow"><span class="dot" style="background:${PAL[i % PAL.length]}"></span>
+      <div class="n"><span>${esc(x.name)}</span><span class="sub num">${x.orders} đơn, ${x.cust} khách</span></div>
+      <div class="r num"><b>${pct(x.share)}</b><span class="sub">${short(x.rev)}</span></div></div>`).join('')}`}
+    <p class="sub" style="margin:10px 0 0">Theo kênh của từng đơn. Đơn cũ chưa ghi kênh thì lấy kênh đầu tiên của khách.</p></div>`;
+
+  /* Danh mục */
+  const cs = d.categories, cmax = Math.max(...cs.map(x => x.rev), 1);
+  const cats = `<div class="card s4"><h2>Danh mục bán chạy</h2>${!cs.length ? '<div class="empty">Chưa có đơn trong kỳ</div>' : cs.slice(0, 6).map(x => `<div class="cat">
+      <div class="top"><span>${esc(x.name)}</span><span class="num"><b>${short(x.rev)}</b> <span class="sub">${pct(x.share)}</span></span></div>
+      <div class="track"><div style="width:${(x.rev / cmax * 100).toFixed(0)}%"></div></div>
+      <span class="sub num">${x.qty} sản phẩm, ${pct(x.custom)} có yêu cầu riêng</span></div>`).join('')}</div>`;
+
+  /* Heat */
+  const DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'], SL = ['0-9h', '9-12h', '12-14h', '14-18h', '18-21h', '21-24h'];
+  const hmax = Math.max(...d.heat.flat(), 0);
+  let best = null; d.heat.forEach((r, i) => r.forEach((v, j) => { if (v && (!best || v > best[0])) best = [v, i, j]; }));
+  const heat = `<div class="card s5"><h2 style="margin-bottom:4px">Khách hay đặt đơn lúc nào</h2>
+    <p class="sub" style="margin:0 0 12px">${best ? `Số đơn theo ngày và khung giờ. Đông nhất: ${DAYS[best[1]].toLowerCase()}, ${SL[best[2]]}.` : 'Chưa có đơn trong kỳ.'}</p>
+    <div class="heat"><span></span>${SL.map(s => `<span class="h">${s}</span>`).join('')}
+    ${d.heat.map((r, i) => `<span class="d">${DAYS[i]}</span>${r.map((v, j) => { const a = hmax ? v / hmax : 0;
+      return `<span class="c num" title="${DAYS[i]} ${SL[j]}: ${v} đơn" style="background:${v ? 'rgba(47,93,78,' + (0.12 + a * 0.88).toFixed(2) + ')' : '#f1f4f2'};color:${a > 0.45 ? '#f8faf9' : C.accent}">${v || ''}</span>`; }).join('')}`).join('')}
+    </div></div>`;
+
+  /* Khu vực */
+  const rg = d.regions, rmax = Math.max(...rg.map(x => x.share), 0.0001);
+  const regs = `<div class="card s3"><h2>Khu vực</h2>${!rg.length ? '<div class="empty">Chưa có đơn trong kỳ</div>' : rg.slice(0, 6).map((x, i) => `<div class="reg">
+      <span class="rk num">${i + 1}</span><div class="n"><span style="font-weight:600">${esc(x.name)}</span><div class="track"><div style="width:${(x.share / rmax * 100).toFixed(0)}%"></div></div></div>
+      <span class="num" style="font-weight:600">${pct(x.share)}</span></div>`).join('')}
+    <p class="sub" style="margin:8px 0 0">Lấy theo phần cuối của địa chỉ giao.</p></div>`;
+
+  /* Phân khúc */
+  const sg = d.segments;
+  const segs = `<section class="card">
+    <div class="seghead"><div><h2>Chân dung khách hàng</h2><span class="sub num">${d.totalCustomers} khách có số điện thoại, chia theo tần suất và độ gần của lần mua cuối (toàn thời gian)</span></div>
+      <span class="sub">Thanh dưới: tỉ trọng doanh thu</span></div>
+    ${(d.tiers || []).length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${d.tiers.map((t, i) => `<span style="padding:6px 12px;border-radius:999px;background:${i ? C.accent : '#e3e7e4'};color:${i ? '#f8faf9' : C.ink};opacity:${i ? 0.55 + i * 0.15 : 1};font-weight:600;font-size:12.5px" class="num">${esc(t.name)}${t.pct ? ' (-' + t.pct + '%)' : ''}: ${t.count} khách</span>`).join('')}
+      <span class="sub num" style="align-self:center">Điểm khách đang giữ: ${(d.pointsOutstanding || 0).toLocaleString('vi-VN')} điểm ≈ ${vnd((d.pointsOutstanding || 0) * (d.pointValue || 0))} có thể bị trừ vào đơn sau</span></div>` : ''}
+    ${d.totalCustomers ? `<div class="segbar">${sg.filter(s => s.spendShare > 0).map(s => `<span class="num" style="width:${(s.spendShare * 100).toFixed(1)}%;background:${SEGC[s.name][0]};color:${SEGC[s.name][1]}" title="${esc(s.name)}">${s.spendShare >= 0.07 ? pct(s.spendShare) : ''}</span>`).join('')}</div>` : ''}
+    <div class="tscroll"><table><thead><tr><th>Phân khúc</th><th class="r">Khách</th><th class="r">Doanh thu</th><th class="r">TB / khách</th><th>Hay mua</th><th>Nên làm gì</th></tr></thead><tbody>
+    ${sg.map(s => `<tr><td><span class="pill"><i style="background:${SEGC[s.name][0]}"></i>${esc(s.name)}</span><div class="sub">${esc(s.rule)}</div></td>
+      <td class="r num">${s.count}</td><td class="r num">${vnd(s.spend)}</td><td class="r num">${vnd(s.avg)}</td>
+      <td class="sub">${s.count ? esc(s.cat) + '<br>qua ' + esc(s.kenh) : '-'}</td><td style="min-width:240px">${esc(s.act)}</td></tr>`).join('')}
+    </tbody></table></div></section>`;
+
+  /* Top sản phẩm + khách */
+  const pr = d.products, pmax = Math.max(...pr.map(x => x.share), 0.0001);
+  const prods = `<div class="card s7"><h2>Sản phẩm bán chạy trong kỳ</h2>${!pr.length ? '<div class="empty">Chưa có đơn trong kỳ</div>' : `<div class="tscroll"><table>
+    <thead><tr><th>Sản phẩm</th><th class="r">SL</th><th class="r">Doanh thu</th><th>Tỉ trọng</th><th class="r">Đặt riêng</th></tr></thead><tbody>
+    ${pr.map(x => `<tr><td><div style="font-weight:600">${esc(x.name)}</div><div class="sub num">${esc(x.sku)}</div></td><td class="r num">${x.qty}</td><td class="r num">${vnd(x.rev)}</td>
+      <td style="min-width:120px"><div style="display:flex;gap:8px;align-items:center"><div class="track" style="flex:1"><div style="width:${(x.share / pmax * 100).toFixed(0)}%"></div></div><span class="num sub">${pct(x.share)}</span></div></td>
+      <td class="r num">${pct(x.custom)}</td></tr>`).join('')}</tbody></table></div>`}</div>`;
+  const tc = d.top.slice(0, 6);
+  const cus = `<div class="card s5"><h2>Khách chi tiêu nhiều nhất</h2>${!tc.length ? '<div class="empty">Chưa có khách có SĐT</div>' : tc.map(x => {
+      const ini = String(x.name).trim().split(/\s+/).slice(-2).map(w => w[0] || '').join('').toUpperCase();
+      return `<div class="cus"><span class="ini">${esc(ini)}</span>
+      <div class="n"><span>${esc(x.name)}</span><span class="sub num">${esc(x.kenh)}, ${x.orders} đơn, gần nhất ${esc(x.last)}</span></div>
+      <div class="r"><b class="num">${vnd(x.spend)}</b><span class="sub" style="color:${(SEGC[x.seg] || [C.grey])[0] === C.grey ? '' : (SEGC[x.seg] || [''])[0]}">${esc(x.seg)}</span></div></div>`; }).join('')}
+    <p class="sub" style="margin:8px 0 0">Tính toàn thời gian.</p></div>`;
+
+  $('main').innerHTML = `<section class="g12">${hero}${kpis}</section>${alerts}
+    <section class="g12">${month}${chan}</section>
+    <section class="g12">${cats}${heat}${regs}</section>
+    ${segs}
+    <section class="g12">${prods}${cus}</section>
+    <p class="foot">Doanh thu = cột Tổng của đơn (đã trừ giảm giá và combo, gồm phí ship), không gồm đơn đã hủy. So sánh với kỳ liền trước có cùng số ngày. Trang tự lấy số mới mỗi 5 phút khi đang mở.</p>`;
+}
+
+/* ---------- Khởi động ---------- */
+renderRanges();
+if (INIT && INIT.data) show(INIT.data);
+else if (INIT && INIT.needPin) {
+  if (PIN) { $('app').hidden = false; $('main').innerHTML = '<div class="sk" style="height:220px"></div><div class="sk" style="height:320px"></div>'; const [f, t] = RANGES[2][1](); load(iso(f), iso(t)); }
+  else askPin('', INIT.noPin);
+} else { $('app').hidden = false; toast((INIT && INIT.error) || 'Không tải được dữ liệu'); }
+
+// tự làm mới mỗi 5 phút khi tab đang mở
+setInterval(() => { if (D && document.visibilityState === 'visible') load(D.range.fromIso, D.range.toIso, true); }, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && D && Date.now() - (window._last || 0) > 60000) { window._last = Date.now(); load(D.range.fromIso, D.range.toIso, true); } });
+</script>
+</body>
+</html>
