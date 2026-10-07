@@ -1290,7 +1290,8 @@ function showBill(b) {
 function qrPlan(b) {
   // còn cọc chưa nhận -> QR cọc; ngược lại QR phần còn lại
   const needDep = (b.canCoc || 0) - (b.coc || 0);
-  if (needDep > 0) return { amt: needDep, dep: true, info: ckInfo('Coc ' + b.ma) };
+  if (needDep > 0) return { amt: needDep, dep: true, info: ckInfo('Coc ' + b.ma) };   // cọc thì vẫn cần QR, kể cả đơn COD
+  if (!/khoản/i.test(b.tt || 'Chuyển khoản')) return { amt: 0 };                 // COD / tiền mặt: không cần QR phần còn lại
   return { amt: b.conlai, dep: false, info: ckInfo(b.ma) };
 }
 function bankBlock(b, s) {
@@ -1343,9 +1344,10 @@ function billHTML(b) {
       ${b.ship ? `<tr><td colspan="${span}">Phí ship</td><td class="r num">${money(b.ship)}</td></tr>` : ''}
       <tr class="grand"><td colspan="${span}">Tổng cộng</td><td class="r num">${money(b.tong)}</td></tr>
       ${b.coc ? `<tr><td colspan="${span}">Đã cọc</td><td class="r num">-${money(b.coc)}</td></tr>
-      <tr class="remain"><td colspan="${span}">Còn lại</td><td class="r num">${money(b.conlai)}</td></tr>` : ''}
+      <tr class="remain"><td colspan="${span}">${/cod/i.test(b.tt || '') ? 'Thu hộ COD khi nhận hàng' : 'Còn lại'}</td><td class="r num">${money(b.conlai)}</td></tr>` : ''}
       ${(b.canCoc || 0) > (b.coc || 0) ? `<tr class="req"><td colspan="${span}">Vui lòng cọc trước</td><td class="r num">${money(b.canCoc - (b.coc || 0))}</td></tr>
-      <tr class="remain"><td colspan="${span}">Còn lại khi nhận hàng</td><td class="r num">${money(b.tong - b.canCoc)}</td></tr>` : ''}
+      <tr class="remain"><td colspan="${span}">${/cod/i.test(b.tt || '') ? 'Thu hộ COD khi nhận hàng' : 'Còn lại khi nhận hàng'}</td><td class="r num">${money(b.tong - b.canCoc)}</td></tr>` : ''}
+      ${!b.coc && !((b.canCoc || 0) > (b.coc || 0)) && /cod/i.test(b.tt || '') && b.conlai > 0 ? `<tr class="remain"><td colspan="${span}">Thu hộ COD khi nhận hàng</td><td class="r num">${money(b.conlai)}</td></tr>` : ''}
     </table>
     ${b.sdt && (b.diemCong || b.diemDu != null) ? `<div class="loybox"><span>${b.hangMoi || b.hang ? 'Hạng <b>' + esc(b.hangMoi || b.hang) + '</b>' : ''}${b.hangMoi && b.hang && b.hangMoi !== b.hang ? ' (vừa lên hạng!)' : ''}</span><span class="num">+${b.diemCong || 0} điểm${b.diemDu != null ? ' · Số dư ' + b.diemDu + ' điểm' : ''}</span></div>` : ''}
     ${b.note ? `<div class="note"><b>Ghi chú:</b> ${esc(b.note)}</div>` : ''}
