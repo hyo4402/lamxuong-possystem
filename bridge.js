@@ -4,7 +4,19 @@
  * Content-Type text/plain để trình duyệt không gửi yêu cầu kiểm tra CORS (preflight).
  */
 (function () {
-  function call(fn, args) {
+  // Google thỉnh thoảng làm rớt kết nối ở bước trả kết quả (máy chủ vẫn chạy xong).
+  // -> tự gửi lại tối đa 2 lần. createOrder an toàn vì có mã chống trùng (rid) xử lý ở Api.gs.
+  const NO_RETRY = { saveBillFile: 1 };
+  function call(fn, args, attempt) {
+    attempt = attempt || 0;
+    return once(fn, args).catch(function (e) {
+      if (e.network && !NO_RETRY[fn] && attempt < 2) {
+        return new Promise(function (r) { setTimeout(r, 800 * (attempt + 1)); }).then(function () { return call(fn, args, attempt + 1); });
+      }
+      throw e;
+    });
+  }
+  function once(fn, args) {
     if (!window.API_URL || /PASTE_/.test(window.API_URL)) return Promise.reject(new Error('Chưa cấu hình API_URL trong config.js'));
     let pin = '';
     try { pin = typeof PIN !== 'undefined' ? PIN : ''; } catch (e) {}
@@ -19,7 +31,10 @@
       if (!j || !j.ok) throw new Error((j && j.error) || 'Lỗi không xác định');
       return j.data;
     }, function (e) {
-      throw new Error(/Failed to fetch|NetworkError|Load failed/.test(e.message) ? 'Mất kết nối mạng, thử lại' : e.message);
+      const net = /Failed to fetch|NetworkError|Load failed/.test(e.message);
+      const err = new Error(net ? 'Mất kết nối mạng, thử lại' : e.message);
+      err.network = net;
+      throw err;
     });
   }
   function runner() {
