@@ -1262,6 +1262,7 @@ $('btnSave').onclick = () => {
   const payload = {
     customer: { sdt, ten: $('ten').value, dc: $('dc').value, kenh: $('kenh').value },
     items: CART.map(l => ({ sku: l.sku, qty: l.qty, price: l.price, note: l.note })),
+    rid: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),   // mã chống tạo trùng khi gửi lại
     giam: t.giam, diem: t.loy.used, ship: t.ship, coc: t.coc || t.canCoc, cocMode: COC_MODE, tt: $('tt').value, hen: $('hen').value, note: $('note').value
   };
   const done = () => { BUSY = false; setBtn('btnSave', 'ph-floppy-disk', 'Lưu đơn'); renderTotals(); };
