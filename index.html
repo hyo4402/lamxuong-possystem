@@ -332,8 +332,11 @@
   .pk-add.flash { transform: scale(.97); }
   .pk-actions { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; margin-top: auto; }
   .pk-done { height: 50px; padding: 0 18px; justify-content: center; font-weight: 600; }
-  .pk-cartline { font-size: 12.5px; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 7px 10px; line-height: 1.45; }
-  .opt .cnt { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; text-decoration: none; }
+  .pk-cartline { font-size: 12.5px; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 0 10px; height: 32px; line-height: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+  .pk-cartline.empty { color: var(--muted); background: var(--sunken); }
+  .opt { position: relative; }
+  .opt .cnt { position: absolute; top: -8px; right: -8px; display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; text-decoration: none; box-shadow: 0 0 0 2px #fff; pointer-events: none; }
+  .pk-opts { padding: 8px 8px 0 0; margin-top: -8px; }
   .pk-add:disabled { background: #9aa49d; border-color: #9aa49d; cursor: not-allowed; }
   body.pk-open { overflow: hidden; }
 
@@ -518,7 +521,7 @@
         </div>
         <label><span class="lbl">Ghi chú (thêu tên, yêu cầu riêng)</span><input id="pkNote" class="input" autocomplete="off"></label>
       </div>
-      <div class="pk-cartline" id="pkCart" hidden></div>
+      <div class="pk-cartline empty" id="pkCart">Chưa thêm phân loại nào vào đơn</div>
       <div class="pk-actions">
         <button class="btn pk-done" type="button" data-pk="close">Xong</button>
         <button id="pkAdd" class="btn btn-primary pk-add" type="button" data-pk="add"></button>
@@ -945,8 +948,9 @@ function renderPicker() {
   }).join('');
   const qty = Math.max(1, Math.floor(num($('pkQty').value)) || 1);
   const inG = CART.filter(l => g.skus.has(l.sku));
-  show($('pkCart'), inG.length > 0);
-  if (inG.length) $('pkCart').innerHTML = '<b>Đã có trong đơn:</b> ' + inG.map(l => { const p = P.find(x => x.sku === l.sku); return esc(p && p.group ? vLabel(p) || p.name : l.name) + ' ×' + l.qty; }).join(', ');
+  const cl = $('pkCart'); cl.classList.toggle('empty', !inG.length);
+  cl.innerHTML = inG.length ? '<b>Đã có trong đơn:</b> ' + inG.map(l => { const p = P.find(x => x.sku === l.sku); return esc(p && p.group ? vLabel(p) || p.name : l.name) + ' ×' + l.qty; }).join(', ') : 'Chưa thêm phân loại nào vào đơn';
+  cl.title = cl.textContent;
   $('pkAdd').disabled = out;
   $('pkAdd').innerHTML = out ? 'Phân loại này đã hết hàng' : `<i class="ph ph-plus"></i><span>Thêm vào đơn, ${money(v.price * qty)}</span>`;
 }
