@@ -276,6 +276,7 @@
     transition: opacity .2s, transform .25s var(--ease);
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  body.pk-open #toast { bottom: auto; top: 20px; }
   #toast.err { background: var(--danger); color: #fff; }
   #loading { position: fixed; inset: 0; display: none; place-items: center; background: rgb(238 240 238 / .8); z-index: 20; color: var(--muted); font-weight: 500; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
@@ -327,7 +328,12 @@
   .pk-row .stepper { height: 42px; }
   .pk-row .stepper button { width: 38px; }
   .pk-row .lbl { display: block; font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
-  .pk-add { height: 50px; font-size: 15px; justify-content: center; margin-top: auto; width: 100%; }
+  .pk-add { height: 50px; font-size: 15px; justify-content: center; width: 100%; transition: transform .15s; }
+  .pk-add.flash { transform: scale(.97); }
+  .pk-actions { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; margin-top: auto; }
+  .pk-done { height: 50px; padding: 0 18px; justify-content: center; font-weight: 600; }
+  .pk-cartline { font-size: 12.5px; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 7px 10px; line-height: 1.45; }
+  .opt .cnt { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; text-decoration: none; }
   .pk-add:disabled { background: #9aa49d; border-color: #9aa49d; cursor: not-allowed; }
   body.pk-open { overflow: hidden; }
 
@@ -512,7 +518,11 @@
         </div>
         <label><span class="lbl">Ghi chú (thêu tên, yêu cầu riêng)</span><input id="pkNote" class="input" autocomplete="off"></label>
       </div>
-      <button id="pkAdd" class="btn btn-primary pk-add" type="button" data-pk="add"></button>
+      <div class="pk-cartline" id="pkCart" hidden></div>
+      <div class="pk-actions">
+        <button class="btn pk-done" type="button" data-pk="close">Xong</button>
+        <button id="pkAdd" class="btn btn-primary pk-add" type="button" data-pk="add"></button>
+      </div>
     </div>
   </div>
 </div>
@@ -907,6 +917,9 @@ function pkPick(f, val) {
   }
   if (v) { PK.sel = pkSelFrom(v); renderPicker(); }
 }
+function inCartCount(match) {
+  return CART.reduce((s, l) => { const p = PK && PK.g.v.find(x => x.sku === l.sku); return s + (p && match(p) ? l.qty : 0); }, 0);
+}
 function renderPicker() {
   const { g, D, sel } = PK;
   const v = pkFind(sel) || g.v[0];
@@ -926,10 +939,14 @@ function renderPicker() {
       const off = !c || isOut(c);
       const on = sel[d.f] === o;
       const txt = d.text ? d.text(o) : (o || '—');
-      return `<button type="button" class="opt ${on ? 'on' : ''} ${off ? 'off' : ''}" data-f="${d.f}" data-v="${esc(o)}" aria-pressed="${on}"${off ? ` title="${c ? 'Hết hàng' : 'Không có tổ hợp này'}"` : ''}>${esc(txt)}</button>`;
+      const k = inCartCount(p => pkVal(p, d.f) === o && D.every(x => x.f === d.f || pkVal(p, x.f) === sel[x.f]));
+      return `<button type="button" class="opt ${on ? 'on' : ''} ${off ? 'off' : ''}" data-f="${d.f}" data-v="${esc(o)}" aria-pressed="${on}"${off ? ` title="${c ? 'Hết hàng' : 'Không có tổ hợp này'}"` : ''}>${esc(txt)}${k ? `<span class="cnt">${k}</span>` : ''}</button>`;
     }).join('')}</div></div>`;
   }).join('');
   const qty = Math.max(1, Math.floor(num($('pkQty').value)) || 1);
+  const inG = CART.filter(l => g.skus.has(l.sku));
+  show($('pkCart'), inG.length > 0);
+  if (inG.length) $('pkCart').innerHTML = '<b>Đã có trong đơn:</b> ' + inG.map(l => { const p = P.find(x => x.sku === l.sku); return esc(p && p.group ? vLabel(p) || p.name : l.name) + ' ×' + l.qty; }).join(', ');
   $('pkAdd').disabled = out;
   $('pkAdd').innerHTML = out ? 'Phân loại này đã hết hàng' : `<i class="ph ph-plus"></i><span>Thêm vào đơn, ${money(v.price * qty)}</span>`;
 }
@@ -944,9 +961,13 @@ $('picker').addEventListener('click', e => {
   if (a === 'dec') { q.value = Math.max(1, (num(q.value) || 1) - 1); renderPicker(); }
   if (a === 'add') {
     const v = pkFind(PK.sel); if (!v || isOut(v)) return;
-    addToCart(v.sku, Math.max(1, num(q.value) || 1), $('pkNote').value.trim());
-    closePicker();
-    toast('Đã thêm ' + (v.group ? v.group + ' · ' + vLabel(v) : v.name));
+    const n = Math.max(1, num(q.value) || 1);
+    addToCart(v.sku, n, $('pkNote').value.trim());
+    // giữ popup mở để chọn tiếp màu/size khác; tắt bằng nút X, "Xong", Esc hoặc bấm ra ngoài
+    q.value = 1; $('pkNote').value = '';
+    renderPicker();
+    toast('Đã thêm ' + n + ' × ' + (v.group ? vLabel(v) : v.name));
+    const btn = $('pkAdd'); btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 450);
   }
 });
 $('pkQty').addEventListener('input', () => PK && renderPicker());
