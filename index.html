@@ -278,6 +278,12 @@
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
   body.pk-open #toast { bottom: auto; top: 20px; }
   #toast.err { background: var(--danger); color: #fff; }
+  .imgview { position: fixed; inset: 0; z-index: 28; background: rgb(27 31 28 / .6); display: grid; place-items: center; padding: 16px; }
+  .imgview[hidden] { display: none; }
+  .imgview-box { background: var(--surface); border-radius: 14px; padding: 14px; display: grid; gap: 12px; max-width: 480px; width: 100%; max-height: calc(100dvh - 32px); }
+  .imgview-box p { margin: 0; font-size: 14px; text-align: center; }
+  .imgview-box img { width: 100%; max-height: calc(100dvh - 180px); object-fit: contain; border: 1px solid var(--line); border-radius: 8px; -webkit-touch-callout: default; user-select: auto; }
+  .imgview-box .btn { justify-content: center; height: 46px; }
   #loading { position: fixed; inset: 0; display: none; place-items: center; background: rgb(238 240 238 / .8); z-index: 20; color: var(--muted); font-weight: 500; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 
@@ -395,7 +401,7 @@
   @media print {
     @page { margin: 8mm; }
     body { background: #fff; }
-    .pos, .billbar, #toast, #loading { display: none !important; }
+    .pos, .billbar, #toast, #loading, .imgview { display: none !important; }
     .billview, .billwrap { height: auto; padding: 0; background: #fff; overflow: visible; }
     #bill { box-shadow: none; }
   }
@@ -543,6 +549,13 @@
     <button id="btnClose" class="icon-btn" type="button" aria-label="Đóng"><i class="ph ph-x"></i></button>
   </div>
   <div class="billwrap"><div id="bill"></div></div>
+</div>
+<div id="imgView" class="imgview" hidden>
+  <div class="imgview-box">
+    <p><b>Nhấn giữ vào ảnh</b> rồi chọn <b>Lưu ảnh</b> (hoặc Tải hình ảnh xuống)</p>
+    <img alt="Ảnh bill">
+    <button class="btn btn-primary" type="button" data-close>Xong</button>
+  </div>
 </div>
 
 <script src="config.js"></script>
@@ -1312,6 +1325,8 @@ function showBill(b) {
   show($('driveLink'), !!b.link);
   if (b.link) $('driveLink').innerHTML = `Đã lưu trên Drive: <a href="${esc(b.link)}" target="_blank">mở file</a>`;
   show($('pos'), false); show($('billView'), true);
+  PREP = null;
+  if (IS_MOBILE) setTimeout(() => { if (CUR === b) prepImage(); }, 300);
 }
 function qrPlan(b) {
   // còn cọc chưa nhận -> QR cọc; ngược lại QR phần còn lại
@@ -1396,16 +1411,54 @@ async function makeFile(type) {
   pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, w, h);
   return pdf.output('datauristring');
 }
+/* Tải file trên điện thoại: iPhone/Zalo/Facebook không hỗ trợ tải kiểu máy tính.
+   -> Ưu tiên bảng chia sẻ của máy (Lưu ảnh / gửi Zalo), không được thì hiện ảnh để nhấn giữ -> Lưu ảnh. */
+const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+let PREP = null;   // ảnh bill dựng sẵn ngay khi mở bill, để bấm "Tải ảnh" là chia sẻ được liền (iPhone chặn chia sẻ nếu chờ lâu sau khi bấm)
+async function toFile(url, name) { const blob = await (await fetch(url)).blob(); return new File([blob], name, { type: blob.type }); }
+function prepImage() {
+  const b = CUR; if (!b) return null;
+  PREP = { ma: b.ma, p: makeFile('png').then(async url => ({ url, file: await toFile(url, b.ma + '.png') })) };
+  PREP.p.catch(() => { if (PREP && PREP.ma === b.ma) PREP = null; });
+  return PREP.p;
+}
+async function shareFile(file) {
+  if (!navigator.canShare || !navigator.canShare({ files: [file] })) return false;
+  try { await navigator.share({ files: [file], title: file.name }); return true; }
+  catch (e) { return e.name === 'AbortError'; }   // người dùng tự huỷ thì thôi; lỗi khác -> cách dự phòng
+}
+function showImage(url) {
+  const v = $('imgView'); v.querySelector('img').src = url; show(v, true);
+}
 async function download(type) {
   if (!CUR) return;
+  const id = type === 'png' ? 'btnPng' : 'btnPdf', icon = type === 'png' ? 'ph-image' : 'ph-file-pdf', label = type === 'png' ? 'Tải ảnh' : 'Tải PDF';
   try {
-    const url = await makeFile(type);
-    const a = document.createElement('a');
-    a.href = url; a.download = CUR.ma + '.' + type;
+    let url, file;
+    if (type === 'png') {
+      const ready = PREP && PREP.ma === CUR.ma ? PREP.p : null;
+      if (!ready) setBtn(id, icon, 'Đang tạo...', true);
+      ({ url, file } = await (ready || prepImage()));
+    } else {
+      setBtn(id, icon, 'Đang tạo...', true);
+      url = await makeFile('pdf'); file = await toFile(url, CUR.ma + '.pdf');
+    }
+    setBtn(id, icon, label);
+    if (IS_MOBILE) {
+      if (await shareFile(file)) return;
+      if (type === 'png') return showImage(url);
+      const w = window.open(URL.createObjectURL(file), '_blank');   // PDF: mở tab mới để lưu từ trình xem PDF
+      if (!w) toast('Máy chặn mở file, bấm "Lưu Drive" để lấy link', true);
+      return;
+    }
+    const href = URL.createObjectURL(file), a = document.createElement('a');
+    a.href = href; a.download = file.name;
     document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 20000);
     toast('Không thấy file tải về? Bấm "Lưu Drive"');
-  } catch (e) { toast('Lỗi tạo file: ' + e.message, true); }
+  } catch (e) { setBtn(id, icon, label); toast('Lỗi tạo file: ' + e.message, true); }
 }
+$('imgView').addEventListener('click', e => { if (e.target.closest('[data-close]') || e.target === $('imgView')) show($('imgView'), false); });
 $('btnPng').onclick = () => download('png');
 $('btnPdf').onclick = () => download('pdf');
 $('btnDrive').onclick = async () => {
