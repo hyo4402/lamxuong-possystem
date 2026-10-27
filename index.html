@@ -1413,7 +1413,9 @@ async function makeFile(type) {
 }
 /* Tải file trên điện thoại: iPhone/Zalo/Facebook không hỗ trợ tải kiểu máy tính.
    -> Ưu tiên bảng chia sẻ của máy (Lưu ảnh / gửi Zalo), không được thì hiện ảnh để nhấn giữ -> Lưu ảnh. */
-const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+const IN_APP = /Zalo|FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|TikTok|musical_ly/i.test(navigator.userAgent);   // trình duyệt trong app: không tải file được
+const IS_MOBILE = IS_IOS || /Android|Mobile/i.test(navigator.userAgent);
 let PREP = null;   // ảnh bill dựng sẵn ngay khi mở bill, để bấm "Tải ảnh" là chia sẻ được liền (iPhone chặn chia sẻ nếu chờ lâu sau khi bấm)
 async function toFile(url, name) { const blob = await (await fetch(url)).blob(); return new File([blob], name, { type: blob.type }); }
 function prepImage() {
@@ -1444,8 +1446,10 @@ async function download(type) {
       url = await makeFile('pdf'); file = await toFile(url, CUR.ma + '.pdf');
     }
     setBtn(id, icon, label);
-    if (IS_MOBILE) {
-      if (await shareFile(file)) return;
+    // Android (Chrome/Samsung): tải thẳng về máy như máy tính -> ảnh vào Thư viện, mục Download
+    // iPhone: bảng chia sẻ có sẵn "Lưu hình ảnh"; trong Zalo/Facebook: hiện ảnh để nhấn giữ -> Lưu ảnh
+    if (IS_MOBILE && (IS_IOS || IN_APP)) {
+      if (IS_IOS && !IN_APP && await shareFile(file)) return;
       if (type === 'png') return showImage(url);
       const w = window.open(URL.createObjectURL(file), '_blank');   // PDF: mở tab mới để lưu từ trình xem PDF
       if (!w) toast('Máy chặn mở file, bấm "Lưu Drive" để lấy link', true);
@@ -1455,7 +1459,7 @@ async function download(type) {
     a.href = href; a.download = file.name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(href), 20000);
-    toast('Không thấy file tải về? Bấm "Lưu Drive"');
+    toast(IS_MOBILE ? 'Đã tải về máy, xem trong Thư viện ảnh hoặc mục Tải xuống' : 'Không thấy file tải về? Bấm "Lưu Drive"');
   } catch (e) { setBtn(id, icon, label); toast('Lỗi tạo file: ' + e.message, true); }
 }
 $('imgView').addEventListener('click', e => { if (e.target.closest('[data-close]') || e.target === $('imgView')) show($('imgView'), false); });
